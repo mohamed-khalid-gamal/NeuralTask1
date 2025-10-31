@@ -18,7 +18,6 @@ class Perceptron:
         if self.random_state is not None:
             np.random.seed(self.random_state)
 
-        # Small random weights
         self.weights = np.random.uniform(-0.5, 0.5, n_features)
 
         if self.use_bias:

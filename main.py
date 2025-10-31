@@ -16,7 +16,6 @@ def main():
     print("5. Click 'Train Model' to train")
     print("6. Click 'Test Model' to evaluate on test data")
     print("7. Click 'Visualize' to see decision boundary and learning curves")
-    print("8. Use 'Classify Single Sample' to classify new data points\n")
 
     root = tk.Tk()
     app = NeuralNetworkGUI(root)

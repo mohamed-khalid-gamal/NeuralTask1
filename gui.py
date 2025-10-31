@@ -1,7 +1,5 @@
-
 import tkinter as tk
 from tkinter import ttk, messagebox
-import numpy as np
 import matplotlib.pyplot as plt
 
 from data_preprocessing import DataPreprocessor
@@ -35,14 +33,14 @@ class NeuralNetworkGUI:
     def setup_ui(self):
 
         main_frame = ttk.Frame(self.root, padding="10")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        main_frame.grid(row=0, column=0, sticky='nsew')
 
         title_label = ttk.Label(main_frame, text="Penguin Species Classification",
                                font=('Arial', 16, 'bold'))
         title_label.grid(row=0, column=0, columnspan=2, pady=10)
 
         feature_frame = ttk.LabelFrame(main_frame, text="Feature Selection", padding="10")
-        feature_frame.grid(row=1, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=5)
+        feature_frame.grid(row=1, column=0, columnspan=2, sticky='we', pady=5)
 
         ttk.Label(feature_frame, text="Feature 1:").grid(row=0, column=0, sticky=tk.W, padx=5)
         self.feature1_var = tk.StringVar(value=self.features[0])
@@ -57,7 +55,7 @@ class NeuralNetworkGUI:
         feature2_combo.grid(row=1, column=1, padx=5, pady=3)
 
         class_frame = ttk.LabelFrame(main_frame, text="Class Selection", padding="10")
-        class_frame.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=5)
+        class_frame.grid(row=2, column=0, columnspan=2, sticky='we', pady=5)
 
         ttk.Label(class_frame, text="Class 1:").grid(row=0, column=0, sticky=tk.W, padx=5)
         self.class1_var = tk.StringVar(value=self.classes[0])
@@ -72,9 +70,10 @@ class NeuralNetworkGUI:
         class2_combo.grid(row=1, column=1, padx=5, pady=3)
 
         param_frame = ttk.LabelFrame(main_frame, text="Hyperparameters", padding="10")
-        param_frame.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=5)
+        param_frame.grid(row=3, column=0, columnspan=2, sticky='we', pady=5)
 
         ttk.Label(param_frame, text="Learning Rate (η):").grid(row=0, column=0, sticky=tk.W, padx=5)
+        # Default to Perceptron-friendly learning rate; will adjust on algorithm change
         self.eta_var = tk.StringVar(value="0.01")
         eta_entry = ttk.Entry(param_frame, textvariable=self.eta_var, width=22)
         eta_entry.grid(row=0, column=1, padx=5, pady=3)
@@ -85,7 +84,7 @@ class NeuralNetworkGUI:
         epochs_entry.grid(row=1, column=1, padx=5, pady=3)
 
         ttk.Label(param_frame, text="MSE Threshold:").grid(row=2, column=0, sticky=tk.W, padx=5)
-        self.mse_var = tk.StringVar(value="0.01")
+        self.mse_var = tk.StringVar(value="0.5")
         mse_entry = ttk.Entry(param_frame, textvariable=self.mse_var, width=22)
         mse_entry.grid(row=2, column=1, padx=5, pady=3)
 
@@ -94,15 +93,17 @@ class NeuralNetworkGUI:
         bias_check.grid(row=3, column=0, columnspan=2, pady=5)
 
         algo_frame = ttk.LabelFrame(main_frame, text="Algorithm", padding="10")
-        algo_frame.grid(row=4, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=5)
+        algo_frame.grid(row=4, column=0, columnspan=2, sticky='we', pady=5)
 
         self.algorithm_var = tk.StringVar(value="Perceptron")
         perceptron_radio = ttk.Radiobutton(algo_frame, text="Perceptron",
-                                          variable=self.algorithm_var, value="Perceptron")
+                                          variable=self.algorithm_var, value="Perceptron",
+                                          command=self.on_algorithm_change)
         perceptron_radio.grid(row=0, column=0, padx=20, pady=5)
 
         adaline_radio = ttk.Radiobutton(algo_frame, text="Adaline",
-                                       variable=self.algorithm_var, value="Adaline")
+                                       variable=self.algorithm_var, value="Adaline",
+                                       command=self.on_algorithm_change)
         adaline_radio.grid(row=0, column=1, padx=20, pady=5)
 
         button_frame = ttk.Frame(main_frame, padding="10")
@@ -117,30 +118,20 @@ class NeuralNetworkGUI:
         visualize_btn = ttk.Button(button_frame, text="Visualize", command=self.visualize, width=20)
         visualize_btn.grid(row=0, column=2, padx=10)
 
-        classify_frame = ttk.LabelFrame(main_frame, text="Classify Single Sample", padding="10")
-        classify_frame.grid(row=6, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=5)
 
-        ttk.Label(classify_frame, text="Feature 1 Value:").grid(row=0, column=0, sticky=tk.W, padx=5)
-        self.sample_f1_var = tk.StringVar()
-        sample_f1_entry = ttk.Entry(classify_frame, textvariable=self.sample_f1_var, width=22)
-        sample_f1_entry.grid(row=0, column=1, padx=5, pady=3)
-
-        ttk.Label(classify_frame, text="Feature 2 Value:").grid(row=1, column=0, sticky=tk.W, padx=5)
-        self.sample_f2_var = tk.StringVar()
-        sample_f2_entry = ttk.Entry(classify_frame, textvariable=self.sample_f2_var, width=22)
-        sample_f2_entry.grid(row=1, column=1, padx=5, pady=3)
-
-        classify_btn = ttk.Button(classify_frame, text="Classify Sample",
-                                 command=self.classify_sample, width=20)
-        classify_btn.grid(row=2, column=0, columnspan=2, pady=10)
-
-        self.result_label = ttk.Label(classify_frame, text="", font=('Arial', 11, 'bold'))
-        self.result_label.grid(row=3, column=0, columnspan=2)
 
         self.status_var = tk.StringVar(value="Ready")
         status_label = ttk.Label(main_frame, textvariable=self.status_var,
                                 relief=tk.SUNKEN, anchor=tk.W)
-        status_label.grid(row=7, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=5)
+        status_label.grid(row=7, column=0, columnspan=2, sticky='we', pady=5)
+
+    def on_algorithm_change(self):
+        algo = self.algorithm_var.get()
+        if algo == "Perceptron":
+            self.eta_var.set("0.01")
+        else:
+            self.eta_var.set("0.001")
+        self.mse_var.set("0.5")
 
     def validate_inputs(self):
         if self.feature1_var.get() == self.feature2_var.get():
@@ -181,7 +172,7 @@ class NeuralNetworkGUI:
             normalize = (algorithm == "Adaline")
             X, y = self.preprocessor.get_class_data(class1, class2, feature1, feature2, normalize=normalize)
             self.X_train, self.X_test, self.y_train, self.y_test = \
-                self.preprocessor.split_data(X, y, train_size=30)
+                self.preprocessor.split_data(X, y, train_size=30, random_state=42)
 
             eta = float(self.eta_var.get())
             epochs = int(self.epochs_var.get())
@@ -261,31 +252,6 @@ class NeuralNetworkGUI:
         except Exception as e:
             messagebox.showerror("Error", f"Visualization failed: {str(e)}")
 
-    def classify_sample(self):
-        if self.model is None:
-            messagebox.showerror("Error", "Please train the model first!")
-            return
-
-        try:
-            f1_val = float(self.sample_f1_var.get())
-            f2_val = float(self.sample_f2_var.get())
-
-            sample = np.array([[f1_val, f2_val]])
-            prediction = self.model.predict(sample)[0]
-
-            class1 = self.class1_var.get()
-            class2 = self.class2_var.get()
-
-            predicted_class = class1 if prediction == -1 else class2
-
-            self.result_label.config(text=f"Predicted Class: {predicted_class}",
-                                   foreground='green')
-            self.status_var.set(f"Sample classified as: {predicted_class}")
-
-        except ValueError:
-            messagebox.showerror("Error", "Please enter valid numeric values!")
-        except Exception as e:
-            messagebox.showerror("Error", f"Classification failed: {str(e)}")
 
 
 def main():
